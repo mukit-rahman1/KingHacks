@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 
+import {
+  addBackboardMemory,
+  uploadBackboardAssistantDocument,
+  upsertBackboardDocument,
+} from "@/lib/backboard/client";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
+//To Slug Function
 const toSlug = (value: string) =>
   value
     .toLowerCase()
@@ -9,6 +15,10 @@ const toSlug = (value: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)+/g, "");
 
+const buildOrgText = (name: string, description: string, tags: string[]) =>
+  `${name}\n${description}\n${tags.join(" ")}`.trim();
+
+//Get Organization Function
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
   if (!authHeader) {
@@ -18,6 +28,7 @@ export async function GET(request: Request) {
     );
   }
 
+  //Create Supabase Server Client
   const accessToken = authHeader.replace("Bearer ", "").trim();
   if (!accessToken) {
     return NextResponse.json(
@@ -66,6 +77,7 @@ export async function POST(request: Request) {
     );
   }
 
+  //Get Name, Tags, and Description
   const body = await request.json();
   const name = typeof body.name === "string" ? body.name.trim() : "";
   const tags = Array.isArray(body.tags) ? body.tags : [];
@@ -76,6 +88,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Name is required." }, { status: 400 });
   }
 
+  //Create Supabase Server Client
   const supabase = createSupabaseServerClient(accessToken);
   const { data: userData, error: userError } = await supabase.auth.getUser();
 
@@ -86,6 +99,7 @@ export async function POST(request: Request) {
     );
   }
 
+  //Get Existing Organization
   const { data: existingOrg, error: existingError } = await supabase
     .from("organizations")
     .select("id, slug")
@@ -98,7 +112,7 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
-
+  
   if (existingOrg) {
     const { error: updateError } = await supabase
       .from("organizations")
@@ -115,6 +129,37 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+
+    await upsertBackboardDocument({
+      id: existingOrg.id,
+      type: "organization",
+      text: buildOrgText(name, description, tags),
+      metadata: {
+        name,
+        description,
+        tags,
+        owner_id: userData.user.id,
+      },
+    });
+    await addBackboardMemory({
+      content: buildOrgText(name, description, tags),
+      metadata: {
+        type: "organization",
+        id: existingOrg.id,
+        name,
+        description,
+        tags,
+        owner_id: userData.user.id,
+      },
+    });
+    await uploadBackboardAssistantDocument({
+      filename: `org-${existingOrg.id}.txt`,
+      content: [
+        `Organization: ${name}`,
+        `Description: ${description || "N/A"}`,
+        `Tags: ${tags.length ? tags.join(", ") : "N/A"}`,
+      ].join("\n"),
+    });
 
     return NextResponse.json({ ok: true, id: existingOrg.id });
   }
@@ -138,6 +183,39 @@ export async function POST(request: Request) {
   if (insertError) {
     return NextResponse.json({ error: insertError.message }, { status: 400 });
   }
+
+  await upsertBackboardDocument({
+    id: org.id,
+    type: "organization",
+    text: buildOrgText(name, description, tags),
+    metadata: {
+      name,
+      description,
+      tags,
+      owner_id: userData.user.id,
+      slug,
+    },
+  });
+  await addBackboardMemory({
+    content: buildOrgText(name, description, tags),
+    metadata: {
+      type: "organization",
+      id: org.id,
+      name,
+      description,
+      tags,
+      owner_id: userData.user.id,
+      slug,
+    },
+  });
+  await uploadBackboardAssistantDocument({
+    filename: `org-${org.id}.txt`,
+    content: [
+      `Organization: ${name}`,
+      `Description: ${description || "N/A"}`,
+      `Tags: ${tags.length ? tags.join(", ") : "N/A"}`,
+    ].join("\n"),
+  });
 
   return NextResponse.json({ ok: true, id: org.id });
 }

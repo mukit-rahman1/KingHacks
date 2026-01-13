@@ -2,40 +2,32 @@ import { NextResponse } from "next/server";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
+//Normalize Tags Function
 const normalizeTags = (value: unknown) =>
   Array.isArray(value)
     ? value.filter((item) => typeof item === "string")
     : [];
 
+//Get Organizations Function
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
   const accessToken = authHeader?.replace("Bearer ", "").trim();
 
+  //Create Supabase Server Client
   const supabase = accessToken
     ? createSupabaseServerClient(accessToken)
     : createSupabaseServerClient("");
 
-  let excludeOwnerId: string | null = null;
-
-  if (accessToken) {
-    const { data: userData, error: userError } = await supabase.auth.getUser();
-    if (!userError && userData.user) {
-      excludeOwnerId = userData.user.id;
-    }
-  }
-
-  const query = supabase
+  //Get Organizations
+  const { data: organizations, error } = await supabase
     .from("organizations")
-    .select("id, name, description, tags, owner_id");
-
-  const { data: organizations, error } = excludeOwnerId
-    ? await query.neq("owner_id", excludeOwnerId)
-    : await query;
+    .select("id, name, description, tags");
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
+  //Format Organizations
   const formatted = (organizations ?? []).map((org) => ({
     id: org.id,
     name: org.name ?? "Organization",

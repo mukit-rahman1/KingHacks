@@ -1,5 +1,12 @@
 import { NextResponse } from "next/server";
 
+import {
+  addBackboardMemory,
+  isBackboardSearchEnabled,
+  searchBackboard,
+  uploadBackboardAssistantDocument,
+  upsertBackboardDocument,
+} from "@/lib/backboard/client";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 //Event Input Type
@@ -12,6 +19,15 @@ type EventInput = {
   created_at: string;
 };
 
+type EventItem = {
+  id: string;
+  title: string;
+  description: string;
+  date: string;
+  tags: string[];
+  orgName: string;
+};
+
 //Normalize Tags Function
 const normalizeTags = (value: unknown) =>
   Array.isArray(value)
@@ -22,10 +38,60 @@ const normalizeTags = (value: unknown) =>
 const hasOverlap = (left: string[], right: string[]) =>
   left.some((item) => right.includes(item));
 
+const buildSearchQuery = (query: string | null, tags: string[]) => {
+  if (query && query.trim()) {
+    return query.trim();
+  }
+  return tags.length ? tags.join(" ") : "";
+};
+
+const toBackboardEvent = (item: {
+  id: string;
+  data?: Record<string, unknown>;
+}) => {
+  const data = item.data ?? {};
+  const title =
+    typeof data.title === "string"
+      ? data.title
+      : typeof data.name === "string"
+        ? data.name
+        : "";
+  const description =
+    typeof data.description === "string" ? data.description : "";
+  const date =
+    typeof data.date === "string"
+      ? data.date
+      : typeof data.starts_at === "string"
+        ? data.starts_at
+        : "";
+  const tags = normalizeTags(data.tags);
+  const orgName =
+    typeof data.orgName === "string"
+      ? data.orgName
+      : typeof data.organization === "string"
+        ? data.organization
+        : "Organization";
+
+  if (!title && !description && !date && tags.length === 0) {
+    return null;
+  }
+
+  return {
+    id: item.id,
+    title: title || "Event",
+    description,
+    date,
+    tags,
+    orgName,
+  };
+};
+
 //Get Events Function
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
   const accessToken = authHeader?.replace("Bearer ", "").trim();
+  const url = new URL(request.url);
+  const query = url.searchParams.get("q");
 
   //Create Supabase Server Client
   const supabase = accessToken
@@ -74,6 +140,29 @@ export async function GET(request: Request) {
         orgName,
       }));
   });
+
+  const searchQuery = buildSearchQuery(query, orgTags);
+  if (isBackboardSearchEnabled() && searchQuery) {
+    const { items } = await searchBackboard({
+      query: searchQuery,
+      limit: 50,
+      filters: { type: "event" },
+    });
+
+    const backboardEvents = items
+      .map((item) => toBackboardEvent(item))
+      .filter((item): item is EventItem => Boolean(item));
+
+    if (backboardEvents.length > 0) {
+      return NextResponse.json({ events: backboardEvents });
+    }
+
+    const ids = new Set(items.map((item) => item.id).filter(Boolean));
+    if (ids.size > 0) {
+      const filteredByIds = events.filter((event) => ids.has(event.id));
+      return NextResponse.json({ events: filteredByIds });
+    }
+  }
 
   //Filter Events
   const filteredEvents =
@@ -128,7 +217,7 @@ export async function POST(request: Request) {
   //Get Organization
   const { data: org, error: orgError } = await supabase
     .from("organizations")
-    .select("id, events")
+    .select("id, name, events")
     .eq("owner_id", userData.user.id)
     .maybeSingle();
 
@@ -165,6 +254,42 @@ export async function POST(request: Request) {
   if (updateError) {
     return NextResponse.json({ error: updateError.message }, { status: 400 });
   }
+
+  const orgName = typeof org.name === "string" ? org.name : "Organization";
+  await upsertBackboardDocument({
+    id: newEvent.id,
+    type: "event",
+    text: `${title}\n${description}\n${tags.join(" ")}`.trim(),
+    metadata: {
+      title,
+      description,
+      date,
+      tags,
+      orgName,
+    },
+  });
+  await addBackboardMemory({
+    content: `${title}\n${description}\n${tags.join(" ")}`.trim(),
+    metadata: {
+      type: "event",
+      id: newEvent.id,
+      title,
+      description,
+      date,
+      tags,
+      orgName,
+    },
+  });
+  await uploadBackboardAssistantDocument({
+    filename: `event-${newEvent.id}.txt`,
+    content: [
+      `Event: ${title}`,
+      `Organization: ${orgName}`,
+      `Description: ${description || "N/A"}`,
+      `Date: ${date || "TBD"}`,
+      `Tags: ${tags.length ? tags.join(", ") : "N/A"}`,
+    ].join("\n"),
+  });
 
   return NextResponse.json({ ok: true, event: newEvent });
 }

@@ -1,0 +1,159 @@
+Organization: Skeleton Park Folk Knitters
+Description: Casual knitting circle that meets in the park.
+Tags: craft, community, outdoor
+Events:
+- Stitch & Bitch Tuesdays | 07-14-2025 | Tags: social, craft | Bring a project and chat.
+- Beginner Hat Workshop | 09-11-2026 | Tags: tutorial, beginner | Learn to knit in the round.
+- Yarn Bombing Prep | 03-08-2025 | Tags: activist, art | Prepare creations for a local tree.
+
+Organization: Kingston Tiny Book Club
+Description: Reads only novellas and short stories.
+Tags: books, social, casual
+Events:
+- Coffee & Short Stories | 11-30-2025 | Tags: discussion, coffee | Discuss this month's pick at a café.
+- Author Speculation Night | 05-22-2026 | Tags: game, fun | Guess who wrote anonymous stories.
+- Micro-Fiction Swap | 08-03-2025 | Tags: writing, creative | Write and share 100-word stories.
+
+Organization: Limestone City Swing Dance
+Description: Weekly East Coast Swing lessons for beginners.
+Tags: dance, social, beginner
+Events:
+- Absolute Beginner Lesson | 12-25-2025 | Tags: tutorial, fun | No partner needed.
+- Swing Social Dance | 04-17-2026 | Tags: music, community | Practice moves to live music.
+- Vintage Hair Styling Workshop | 01-19-2025 | Tags: vintage, craft | Learn 1940s hairstyles.
+
+Organization: Kingston Community Seed Library
+Description: Borrow seeds, grow plants, return next year's seeds.
+Tags: garden, sustainability, volunteer
+Events:
+- Seed Packing Party | 11-05-2026 | Tags: volunteer, prep | Prepare seed packets for the season.
+- Heirloom Tomato Talk | 10-12-2025 | Tags: tutorial, food | Learn to save seeds.
+- Seed Swap Saturday | 02-28-2026 | Tags: community, garden | Bring extra seeds to trade.
+
+Organization: Portsmouth Village Poetry Collective
+Description: Writes and shares poetry in a pub backroom.
+Tags: writing, poetry, social
+Events:
+- Prompt Night | 06-01-2025 | Tags: creative, workshop | Write from provided prompts.
+- Open Mic Poetry | 08-09-2026 | Tags: performance, community | Share your work in a supportive space.
+- Found Poetry Collage | 04-26-2025 | Tags: craft, fun | Make poems from old magazines.
+
+Organization: Rideau Trail Hiking Pals
+Description: Organizes short, local hikes for all fitness levels.
+Tags: outdoor, fitness, social
+Events:
+- Lemoine Point Loop | 01-01-2026 | Tags: nature, beginner | Easy Sunday morning birdwatching hike.
+- Rock Dunder Sunset Hike | 09-07-2025 | Tags: scenic, moderate | Moderate hike for a stunning view.
+- Winter Solstice Snowshoe | 07-30-2026 | Tags: seasonal, wellness | Celebrate the shortest day.
+
+Organization: Kingston Board Game Designers
+Description: Playtests and develops original board games.
+Tags: games, design, creative
+Events:
+- Prototype Playtest Night | 02-14-2025 | Tags: feedback, fun | Try out members' unfinished games.
+- Mechanics Workshop | 10-18-2026 | Tags: design, tutorial | Focus on one game element like card drafting.
+- Pizza & Publishing Talk | 05-05-2025 | Tags: business, social | Discuss how to self-publish a game.
+
+Organization: Wolfe Island Community Choir
+Description: Non-audition choir for island residents.
+Tags: music, community, casual
+Events:
+- Weekly Rehearsal | 03-19-2026 | Tags: practice, social | Learn folk and pop songs.
+- Ferry Terminal Caroling | 12-07-2025 | Tags: seasonal, performance | Holiday singing for commuters.
+- Potluck & Sing-Along | 06-12-2026 | Tags: food, fun | Social event with group singing.
+
+Organization: Queen's Campus Bee Club
+Description: Maintains campus bee hives and promotes pollinator health.
+Tags: environment, education, campus
+Events:
+- Hive Inspection Demo | 08-21-2025 | Tags: tutorial, nature | See the bees up close (safely).
+- Beeswax Wrap Making | 12-31-2026 | Tags: craft, sustainability | Craft sustainable food wraps.
+- Pollinator Garden Planting | 01-31-2025 | Tags: volunteer, garden | Help plant native flowers.
+
+Organization: Kingston Fermentation Friends
+Description: Shares knowledge on pickling, brewing, and fermenting.
+Tags: food, diy, workshop
+Events:
+- Sauerkraut Slam | 04-01-2026 | Tags: tutorial, hands-on | Everyone makes their own jar to take home.
+- Kombucha SCOBY Swap | 07-07-2025 | Tags: community, food | Trade starter cultures.
+- Hot Sauce Competition | 09-23-2026 | Tags: social, fun | Taste-test homemade ferments.
+
+Organization: The Screening Room Film Buffs
+Description: Meets after indie film screenings for discussion.
+Tags: film, discussion, arts
+Events:
+- Post-Film Debate | 03-17-2025 | Tags: social, critique | Discuss the week's featured movie.
+- Local Filmmaker Spotlight | 11-15-2026 | Tags: interview, community | Q&A with a Kingston director.
+- Short Film Marathon | 10-31-2025 | Tags: fun, casual | Watch and rate submitted shorts.
+
+Organization: Artillery Park AquaFit Crew
+Description: Morning aquafit group for seniors and beginners.
+Tags: fitness, wellness, senior
+Events:
+- Morning Water Workout | 02-14-2026 | Tags: health, social | Low-impact pool exercise class.
+- Poolside Social Tea | 06-15-2025 | Tags: community, casual | Chat after the workout.
+- Aquatic Safety Refresher | 08-25-2026 | Tags: education, wellness | Review water safety skills.
+
+Organization: Kingston Trash Cleanup Collective
+Description: Weekly litter pickup in different neighbourhoods.
+Tags: volunteer, environment, community
+Events:
+- Spring Parkway Cleanup | 04-10-2025 | Tags: outdoor, seasonal | Clear winter debris from the K&P Trail.
+- Downtown Dash | 01-15-2026 | Tags: fitness, urban | Quick one-hour focused cleanup.
+- Trash Art Sculpture | 09-29-2025 | Tags: art, awareness | Build a sculpture from safe found litter.
+
+Organization: Cookes-Portsmouth Ukulele Jam
+Description: Casual strum-along group for all levels.
+Tags: music, beginner, social
+Events:
+- Chords 101 Workshop | 07-04-2026 | Tags: tutorial, beginner | Learn the basic four chords.
+- Campfire Songs Jam | 02-03-2025 | Tags: fun, community | Strum familiar tunes together.
+- Kids & Parents Ukulele Hour | 10-08-2026 | Tags: family, casual | Family-friendly musical fun.
+
+Organization: Kingston Student Dog-Walking Club
+Description: Pairs students with local seniors needing dog-walking help.
+Tags: volunteer, animals, community
+Events:
+- New Volunteer Orientation | 05-28-2025 | Tags: training, education | Learn safety and handling.
+- Puppy Playdate at City Park | 03-03-2026 | Tags: social, animals | Socialize dogs (and people).
+- Dog First Aid Basics | 12-19-2025 | Tags: workshop, safety | Workshop with a local vet.
+
+Organization: Kingston Improv Drop-In
+Description: Weekly drop-in improv comedy workshops.
+Tags: comedy, theatre, social
+Events:
+- "Yes, And..." Basics | 06-30-2026 | Tags: beginner, workshop | Foundational improv skills workshop.
+- Character Creation Games | 08-14-2025 | Tags: creative, fun | Focus on developing funny characters.
+- Open Jam Performance | 12-10-2026 | Tags: performance, casual | Practice scenes for a small audience.
+
+Organization: Kingston Repair Café Volunteers
+Description: Fix broken items for free to reduce waste.
+Tags: repair, sustainability, volunteer
+Events:
+- Monthly Repair Café | 01-05-2025 | Tags: community, diy | Bring a broken item (toaster, clothing, bike).
+- Sewing Machine Maintenance 101 | 04-30-2026 | Tags: workshop, craft | Learn to service your machine.
+- Tool Sharpening Day | 07-22-2025 | Tags: practical, skill | Sharpen kitchen knives and garden tools.
+
+Organization: Williamsville Community Garden Plotters
+Description: Manages a small neighbourhood plot-sharing garden.
+Tags: garden, food, neighbourhood
+Events:
+- Spring Planting Day | 09-05-2026 | Tags: volunteer, seasonal | Everyone helps plant the main beds.
+- Weeding & Meditation Wednesday | 03-30-2025 | Tags: wellness, community | Mindful garden maintenance.
+- Harvest Potluck Dinner | 11-28-2026 | Tags: food, social | Share a meal with garden produce.
+
+Organization: Kingston Silent Book Club Chapter
+Description: Everyone brings a book and reads together in quiet camaraderie.
+Tags: books, quiet, social
+Events:
+- Cafe Read-In | 10-09-2025 | Tags: coffee, relaxing | Read silently, then chat optionally.
+- Park Blanket Read-Along | 02-07-2026 | Tags: outdoor, leisure | Outdoor silent reading picnic.
+- Book Haul Show & Tell | 06-24-2025 | Tags: casual, fun | Show off recent book acquisitions.
+
+Organization: Kingston Teen Mural Project
+Description: Teens design and paint murals with local artists.
+Tags: art, youth, community
+Events:
+- Brainstorming & Sketch Jam | 08-18-2026 | Tags: design, creative | Develop mural ideas.
+- Spray Paint Safety Workshop | 04-15-2025 | Tags: tutorial, skill | Learn safe graffiti techniques.
+- Community Paint Day | 01-22-2026 | Tags: volunteer, fun | Public help painting the approved design.
