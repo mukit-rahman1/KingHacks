@@ -34,10 +34,6 @@ const normalizeTags = (value: unknown) =>
     ? value.filter((item) => typeof item === "string")
     : [];
 
-//Has Overlap Function
-const hasOverlap = (left: string[], right: string[]) =>
-  left.some((item) => right.includes(item));
-
 const buildSearchQuery = (query: string | null, tags: string[]) => {
   if (query && query.trim()) {
     return query.trim();
@@ -164,13 +160,7 @@ export async function GET(request: Request) {
     }
   }
 
-  //Filter Events
-  const filteredEvents =
-    orgTags.length === 0
-      ? events
-      : events.filter((event) => hasOverlap(event.tags, orgTags));
-
-  return NextResponse.json({ events: filteredEvents });
+  return NextResponse.json({ events });
 }
 
 //Create Event Function
