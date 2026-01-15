@@ -9,6 +9,7 @@ type EventItem = {
   date: string
   tags: string[]
   orgName: string
+  imageUrl?: string
 }
 
 type UiEvent = EventItem & {
@@ -88,6 +89,15 @@ export default function EventsPage() {
               key={event.id}
               className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--card)] p-5 shadow-sm"
             >
+              <div className="h-40 w-full overflow-hidden rounded-xl bg-[color:var(--accent)]/60 mb-4">
+                {event.imageUrl ? (
+                  <img
+                    src={event.imageUrl}
+                    alt={event.title}
+                    className="h-full w-full object-cover"
+                  />
+                ) : null}
+              </div>
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h3 className="font-header text-xl font-bold text-[color:var(--foreground)]">

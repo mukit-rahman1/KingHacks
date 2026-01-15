@@ -35,7 +35,7 @@ export default function RootLayout({
     >
       <body className="font-body antialiased bg-background text-foreground">
         {/* Top Navigation */}
-        <Navbar role="guest" />
+        <Navbar />
 
         {/* Page content */}
         <main className="pt-0">

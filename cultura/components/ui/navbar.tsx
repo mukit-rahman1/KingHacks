@@ -2,9 +2,28 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { createPortal } from "react-dom"
+
+import { supabase } from "@/lib/supabase/client"
 
 type Role = "guest" | "user" | "organizer"
+type Profile = {
+  username: string
+  tags: string[]
+  avatarUrl?: string
+}
+
+type OrgProfile = {
+  id: string
+  name: string
+  tags: string[]
+  events?: {
+    id: string
+    title?: string
+    description?: string
+  }[]
+}
 
 export default function Navbar({
   role = "guest",
@@ -14,13 +33,35 @@ export default function Navbar({
   userName?: string
 }) {
   const [open, setOpen] = useState(false)
+  const [profileOpen, setProfileOpen] = useState(false)
+  const [hasSession, setHasSession] = useState(false)
+  const [sessionRole, setSessionRole] = useState<Role>("guest")
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [orgProfile, setOrgProfile] = useState<OrgProfile | null>(null)
+  const [usernameInput, setUsernameInput] = useState("")
+  const [tagsInput, setTagsInput] = useState("")
+  const [avatarUrl, setAvatarUrl] = useState("")
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
+  const [profileError, setProfileError] = useState<string | null>(null)
+  const [profileNotice, setProfileNotice] = useState<string | null>(null)
+  const [isSavingProfile, setIsSavingProfile] = useState(false)
+  const avatarInputRef = useRef<HTMLInputElement | null>(null)
 
   const navLinks = [
     { href: "/discover", label: "Discover" },
     { href: "/categories", label: "Categories" },
     { href: "/organizers", label: "Organizers" },
+    { href: "/chat", label: "Chat" },
     { href: "/about", label: "About" },
   ]
+
+  const displayRole =
+    hasSession && sessionRole === "guest" ? "user" : sessionRole === "guest" ? role : sessionRole
+  const displayName = profile?.username ?? userName
+
+  const orgEvents = useMemo(() => {
+    return Array.isArray(orgProfile?.events) ? orgProfile?.events ?? [] : []
+  }, [orgProfile])
 
   // Lock scroll when drawer is open
   useEffect(() => {
@@ -30,6 +71,15 @@ export default function Navbar({
     }
   }, [open])
 
+  useEffect(() => {
+    if (!profileOpen) return
+    document.body.style.overflow = "hidden"
+    return () => {
+      document.body.style.overflow = ""
+    }
+  }, [profileOpen])
+
+
   // Escape to close
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -38,6 +88,201 @@ export default function Navbar({
     if (open) window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
   }, [open])
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      const { data } = await supabase.auth.getSession()
+      const accessToken = data.session?.access_token
+      if (!accessToken) {
+        setHasSession(false)
+        setSessionRole("guest")
+        setProfile(null)
+        setOrgProfile(null)
+        return
+      }
+      setHasSession(true)
+
+      const profileResponse = await fetch("/api/individuals", {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      })
+
+      if (profileResponse.ok) {
+        const payload = (await profileResponse.json()) as {
+          profile: Profile | null
+        }
+        if (payload.profile) {
+          setProfile(payload.profile)
+          setUsernameInput(payload.profile.username)
+          setTagsInput(payload.profile.tags.join(", "))
+          setAvatarUrl(payload.profile.avatarUrl ?? "")
+          setSessionRole("user")
+        }
+      }
+
+      const orgResponse = await fetch("/api/organizations", {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      })
+
+      if (orgResponse.ok) {
+        const payload = (await orgResponse.json()) as {
+          organization: OrgProfile | null
+        }
+        if (payload.organization) {
+          setOrgProfile(payload.organization)
+          setSessionRole("organizer")
+        }
+      }
+    }
+
+    void loadProfile()
+    const { data: listener } = supabase.auth.onAuthStateChange(() => {
+      void loadProfile()
+    })
+
+    return () => {
+      listener.subscription.unsubscribe()
+    }
+  }, [])
+
+  const handleProfileSave = async () => {
+    setProfileError(null)
+    setProfileNotice(null)
+    setIsSavingProfile(true)
+
+    const { data } = await supabase.auth.getSession()
+    const accessToken = data.session?.access_token
+    if (!accessToken) {
+      setProfileError("Please sign in again.")
+      setIsSavingProfile(false)
+      return
+    }
+
+    const tags = tagsInput
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter(Boolean)
+
+    const response = await fetch("/api/individuals", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        username: usernameInput,
+        tags,
+        avatarUrl,
+      }),
+    })
+
+    if (!response.ok) {
+      const payload = (await response.json()) as { error?: string }
+      setProfileError(payload.error ?? "Unable to update profile.")
+      setIsSavingProfile(false)
+      return
+    }
+
+    setProfileNotice("Profile updated.")
+    setProfile((prev) =>
+      prev ? { ...prev, username: usernameInput, tags } : null
+    )
+    setIsSavingProfile(false)
+  }
+
+  const handleEventRemove = async (eventId: string) => {
+    setProfileError(null)
+    setProfileNotice(null)
+
+    const { data } = await supabase.auth.getSession()
+    const accessToken = data.session?.access_token
+    if (!accessToken) {
+      setProfileError("Please sign in again.")
+      return
+    }
+
+    const response = await fetch("/api/events", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ eventId }),
+    })
+
+    if (!response.ok) {
+      setProfileError("Unable to remove event.")
+      return
+    }
+
+    setOrgProfile((prev) =>
+      prev
+        ? {
+            ...prev,
+            events: (prev.events ?? []).filter((event) => event.id !== eventId),
+          }
+        : prev
+    )
+  }
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+    setProfileOpen(false)
+  }
+
+  const handleAvatarUpload = async () => {
+    const file = avatarInputRef.current?.files?.[0]
+    if (!file || isUploadingAvatar) {
+      if (!file) {
+        setProfileError("Select a file before uploading.")
+      }
+      return
+    }
+
+    setProfileError(null)
+    setProfileNotice(null)
+    setIsUploadingAvatar(true)
+
+    const { data } = await supabase.auth.getSession()
+    const accessToken = data.session?.access_token
+    if (!accessToken) {
+      setProfileError("Please sign in again.")
+      setIsUploadingAvatar(false)
+      return
+    }
+
+    const formData = new FormData()
+    formData.append("file", file)
+    formData.append("type", "profile")
+
+    const response = await fetch("/api/uploads", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: formData,
+    })
+
+    if (!response.ok) {
+      setProfileError("Unable to upload photo.")
+      setIsUploadingAvatar(false)
+      return
+    }
+
+    const payload = (await response.json()) as { url?: string }
+    if (payload.url) {
+      setAvatarUrl(payload.url)
+      setProfileNotice("Profile photo uploaded. Save profile to apply.")
+    }
+
+    if (avatarInputRef.current) {
+      avatarInputRef.current.value = ""
+    }
+    setIsUploadingAvatar(false)
+  }
 
   return (
     <header
@@ -86,7 +331,7 @@ export default function Navbar({
 
         {/* Desktop actions */}
         <div className="hidden items-center gap-3 md:flex">
-          {role === "guest" && (
+          {displayRole === "guest" && (
             <>
               <Link
                 href="/organizer/signup"
@@ -109,44 +354,24 @@ export default function Navbar({
             </>
           )}
 
-          {role === "user" && (
-            <>
-              <Link
-                href="/saved"
-                className="rounded-xl border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+          {displayRole !== "guest" && (
+            <div className="relative">
+              <button
+                onClick={() => setProfileOpen((prev) => !prev)}
+                className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-border bg-card text-sm font-semibold text-foreground shadow-sm"
+                aria-label="Open profile menu"
               >
-                Saved
-              </Link>
-              <Link
-                href="/profile"
-                className="rounded-xl bg-secondary px-4 py-2 text-sm font-semibold text-secondary-foreground hover:opacity-90"
-              >
-                {userName ?? "Profile"}
-              </Link>
-            </>
-          )}
-
-          {role === "organizer" && (
-            <>
-              <Link
-                href="/dashboard"
-                className="rounded-xl border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
-              >
-                Dashboard
-              </Link>
-              <Link
-                href="/dashboard/events/new"
-                className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
-              >
-                + Create Event
-              </Link>
-              <Link
-                href="/orgProfile"
-                className="rounded-xl bg-secondary px-4 py-2 text-sm font-semibold text-secondary-foreground hover:opacity-90"
-              >
-                Org
-              </Link>
-            </>
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt="Profile"
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  displayName?.slice(0, 2).toUpperCase() ?? "ME"
+                )}
+              </button>
+            </div>
           )}
         </div>
 
@@ -362,6 +587,144 @@ export default function Navbar({
           </div>
         </div>
       </aside>
+
+      {profileOpen && typeof document !== "undefined"
+        ? createPortal(
+            <>
+              <div
+                className="fixed inset-0 z-[100] bg-black/30"
+                onClick={() => setProfileOpen(false)}
+              />
+              <aside
+                className="fixed right-0 top-0 z-[110] h-full w-full max-w-sm border-l border-border bg-card p-5 shadow-2xl"
+                style={{ width: "min(35vw, 360px)" }}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-secondary text-sm font-semibold text-secondary-foreground">
+                      {avatarUrl ? (
+                        <img
+                          src={avatarUrl}
+                          alt="Profile"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        displayName?.slice(0, 2).toUpperCase() ?? "ME"
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase text-muted-foreground">
+                        Profile
+                      </p>
+                      <p className="text-sm font-semibold text-foreground">
+                        {displayName ?? "Community member"}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setProfileOpen(false)}
+                    className="rounded-full border border-border px-3 py-1 text-xs font-semibold text-foreground"
+                  >
+                    Close
+                  </button>
+                </div>
+
+                <div className="mt-5 space-y-4">
+                  {orgProfile?.id ? (
+                    <Link
+                      href="/orgProfile"
+                      onClick={() => setProfileOpen(false)}
+                      className="block rounded-xl border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted"
+                    >
+                      Organization dashboard
+                    </Link>
+                  ) : null}
+                  <div className="rounded-2xl border border-border bg-background p-3">
+                    <p className="text-xs font-semibold text-foreground">
+                      Profile photo
+                    </p>
+                    {avatarUrl ? (
+                      <img
+                        src={avatarUrl}
+                        alt="Profile"
+                        className="mt-2 h-16 w-16 rounded-full object-cover"
+                      />
+                    ) : (
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        No photo yet.
+                      </p>
+                    )}
+                    <div className="mt-3 flex flex-col gap-2">
+                      <input
+                        ref={avatarInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="text-xs text-muted-foreground"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAvatarUpload}
+                        disabled={isUploadingAvatar}
+                        className="rounded-xl border border-border px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-60"
+                      >
+                        {isUploadingAvatar ? "Uploading..." : "Upload photo"}
+                      </button>
+                    </div>
+                  </div>
+                  <label className="block text-xs font-semibold text-foreground">
+                    Username
+                    <input
+                      value={usernameInput}
+                      onChange={(event) =>
+                        setUsernameInput(event.target.value)
+                      }
+                      className="mt-2 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+                    />
+                  </label>
+
+                  <label className="block text-xs font-semibold text-foreground">
+                    Tags
+                    <input
+                      value={tagsInput}
+                      onChange={(event) => setTagsInput(event.target.value)}
+                      className="mt-2 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+                      placeholder="running, dance, volunteering"
+                    />
+                  </label>
+
+                  {profileError ? (
+                    <p className="text-xs text-red-600">{profileError}</p>
+                  ) : null}
+                  {profileNotice ? (
+                    <p className="text-xs text-emerald-600">
+                      {profileNotice}
+                    </p>
+                  ) : null}
+
+                  <button
+                    type="button"
+                    onClick={handleProfileSave}
+                    disabled={isSavingProfile}
+                    className="w-full rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-60"
+                  >
+                    {isSavingProfile ? "Saving..." : "Save profile"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleSignOut}
+                    className="w-full rounded-xl border border-border px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted"
+                  >
+                    Sign out
+                  </button>
+                </div>
+              </aside>
+            </>,
+            document.body
+          )
+        : null}
+
     </header>
   )
 }

@@ -11,9 +11,10 @@ const parseTags = (value: string) =>
     .map((tag) => tag.trim())
     .filter(Boolean)
 
-export default function OnboardingPage() {
+export default function OrganizationOnboardingPage() {
   const router = useRouter()
-  const [username, setUsername] = useState("")
+  const [name, setName] = useState("")
+  const [description, setDescription] = useState("")
   const [tags, setTags] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -32,21 +33,22 @@ export default function OnboardingPage() {
       return
     }
 
-    const response = await fetch("/api/individuals", {
+    const response = await fetch("/api/organizations", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify({
-        username,
+        name,
+        description,
         tags: parseTags(tags),
       }),
     })
 
     if (!response.ok) {
       const payload = (await response.json()) as { error?: string }
-      setError(payload.error ?? "Unable to save profile.")
+      setError(payload.error ?? "Unable to save organization.")
       setIsSubmitting(false)
       return
     }
@@ -58,31 +60,42 @@ export default function OnboardingPage() {
     <div className="mx-auto flex min-h-[70vh] w-full max-w-xl flex-col justify-center px-4">
       <div className="rounded-3xl border border-border bg-card p-8 shadow-sm">
         <h1 className="font-header text-3xl font-bold text-foreground">
-          Complete your profile
+          Create your organization
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Choose a username and add a few interests to personalize events.
+          Share what your club does and the tags you focus on.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <label className="block text-sm font-medium text-foreground">
-            Username
+            Organization name
             <input
-              value={username}
-              onChange={(event) => setUsername(event.target.value)}
+              value={name}
+              onChange={(event) => setName(event.target.value)}
               className="mt-2 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
-              placeholder="e.g. kingstonrunner"
+              placeholder="e.g. Kingston Running Club"
               required
             />
           </label>
 
           <label className="block text-sm font-medium text-foreground">
-            Interests (comma-separated)
+            Description
+            <textarea
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              className="mt-2 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+              rows={3}
+              placeholder="What do you organize?"
+            />
+          </label>
+
+          <label className="block text-sm font-medium text-foreground">
+            Tags (comma-separated)
             <input
               value={tags}
               onChange={(event) => setTags(event.target.value)}
               className="mt-2 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
-              placeholder="running, dance, volunteering"
+              placeholder="running, fitness, social"
             />
           </label>
 

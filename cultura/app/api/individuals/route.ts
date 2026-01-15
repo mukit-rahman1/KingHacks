@@ -36,7 +36,7 @@ export async function GET(request: Request) {
 
   const { data: profile, error: profileError } = await supabase
     .from("individual_profiles")
-    .select("username, tags")
+    .select("username, tags, avatar_url")
     .eq("user_id", userData.user.id)
     .maybeSingle();
 
@@ -52,6 +52,7 @@ export async function GET(request: Request) {
       ? {
           username: profile.username ?? "",
           tags: normalizeTags(profile.tags),
+          avatarUrl: profile.avatar_url ?? "",
         }
       : null,
   });
@@ -78,6 +79,8 @@ export async function POST(request: Request) {
   const username =
     typeof body.username === "string" ? body.username.trim() : "";
   const tags = Array.isArray(body.tags) ? body.tags : [];
+  const avatarUrl =
+    typeof body.avatarUrl === "string" ? body.avatarUrl.trim() : "";
 
   if (!username) {
     return NextResponse.json(
@@ -103,6 +106,7 @@ export async function POST(request: Request) {
         user_id: userData.user.id,
         username,
         tags,
+        avatar_url: avatarUrl || null,
       },
       { onConflict: "user_id" }
     );

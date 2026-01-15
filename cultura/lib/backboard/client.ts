@@ -24,7 +24,7 @@ const assistantName =
   process.env.BACKBOARD_ASSISTANT_NAME ?? "Cultura RAG";
 const systemPrompt =
   process.env.BACKBOARD_SYSTEM_PROMPT ??
-  "Answer only using the uploaded documents. If the answer is not in the documents, say you don't have that information yet. When asked for a club or organization, respond with the name and a short tag summary in this format: \"Organization: <name> — Tags: <tag1, tag2, ...>\".";
+  "Answer only using the uploaded documents. If the answer is not in the documents, say: \"Sorry, there doesn't seem to be clubs like that right now. Check again later or make one!\" When asked for a club or organization, respond with the name and a short tag summary in this format: \"Organization: <name> — Tags: <tag1, tag2, ...>\".";
 const chatGuardPrompt =
   process.env.BACKBOARD_CHAT_GUARD_PROMPT ?? systemPrompt;
 const embeddingProvider = process.env.BACKBOARD_EMBEDDING_PROVIDER ?? "";

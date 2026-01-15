@@ -33,6 +33,23 @@ export default function LoginPage() {
     const accessToken = data.session?.access_token
 
     if (accessToken) {
+      const orgResponse = await fetch("/api/organizations", {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      })
+
+      if (orgResponse.ok) {
+        const payload = (await orgResponse.json()) as {
+          organization: { id: string } | null
+        }
+        if (payload.organization) {
+          router.push("/events")
+          setIsSubmitting(false)
+          return
+        }
+      }
+
       const profileResponse = await fetch("/api/individuals", {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -46,13 +63,13 @@ export default function LoginPage() {
         if (payload.profile?.username) {
           router.push("/events")
         } else {
-          router.push("/onboarding")
+          router.push("/onboarding/select")
         }
       } else {
-        router.push("/onboarding")
+        router.push("/onboarding/select")
       }
     } else {
-      router.push("/onboarding")
+      router.push("/onboarding/select")
     }
 
     setIsSubmitting(false)

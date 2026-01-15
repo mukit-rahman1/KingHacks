@@ -49,7 +49,7 @@ export async function GET(request: Request) {
 
   const { data: org, error: orgError } = await supabase
     .from("organizations")
-    .select("id, name, description, tags")
+    .select("id, name, description, tags, events, logo_url")
     .eq("owner_id", userData.user.id)
     .maybeSingle();
 
@@ -83,6 +83,8 @@ export async function POST(request: Request) {
   const tags = Array.isArray(body.tags) ? body.tags : [];
   const description =
     typeof body.description === "string" ? body.description.trim() : "";
+  const logoUrl =
+    typeof body.logoUrl === "string" ? body.logoUrl.trim() : "";
 
   if (!name) {
     return NextResponse.json({ error: "Name is required." }, { status: 400 });
@@ -120,6 +122,7 @@ export async function POST(request: Request) {
         name,
         description,
         tags,
+        logo_url: logoUrl || null,
       })
       .eq("id", existingOrg.id);
 
@@ -175,6 +178,7 @@ export async function POST(request: Request) {
       slug,
       description,
       tags,
+      logo_url: logoUrl || null,
       events: [],
     })
     .select("id")

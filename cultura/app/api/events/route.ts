@@ -16,6 +16,7 @@ type EventInput = {
   description: string;
   date: string;
   tags: string[];
+  image_url?: string;
   created_at: string;
 };
 
@@ -26,6 +27,7 @@ type EventItem = {
   date: string;
   tags: string[];
   orgName: string;
+  imageUrl?: string;
 };
 
 //Normalize Tags Function
@@ -134,6 +136,7 @@ export async function GET(request: Request) {
         date: event.date ?? "",
         tags: normalizeTags(event.tags),
         orgName,
+        imageUrl: event.image_url ?? "",
       }));
   });
 
@@ -189,6 +192,8 @@ export async function POST(request: Request) {
     typeof body.description === "string" ? body.description.trim() : "";
   const date = typeof body.date === "string" ? body.date.trim() : "";
   const tags = normalizeTags(body.tags);
+  const imageUrl =
+    typeof body.imageUrl === "string" ? body.imageUrl.trim() : "";
 
   if (!title) {
     return NextResponse.json({ error: "Title is required." }, { status: 400 });
@@ -230,6 +235,7 @@ export async function POST(request: Request) {
     description,
     date,
     tags,
+    image_url: imageUrl || undefined,
     created_at: new Date().toISOString(),
   };
 
@@ -256,6 +262,7 @@ export async function POST(request: Request) {
       date,
       tags,
       orgName,
+      imageUrl,
     },
   });
   await addBackboardMemory({
@@ -268,6 +275,7 @@ export async function POST(request: Request) {
       date,
       tags,
       orgName,
+      imageUrl,
     },
   });
   await uploadBackboardAssistantDocument({
@@ -278,8 +286,77 @@ export async function POST(request: Request) {
       `Description: ${description || "N/A"}`,
       `Date: ${date || "TBD"}`,
       `Tags: ${tags.length ? tags.join(", ") : "N/A"}`,
+      imageUrl ? `Image: ${imageUrl}` : "",
     ].join("\n"),
   });
 
   return NextResponse.json({ ok: true, event: newEvent });
+}
+
+export async function DELETE(request: Request) {
+  const authHeader = request.headers.get("authorization");
+  if (!authHeader) {
+    return NextResponse.json(
+      { error: "Missing authorization header." },
+      { status: 401 }
+    );
+  }
+
+  const accessToken = authHeader.replace("Bearer ", "").trim();
+  if (!accessToken) {
+    return NextResponse.json(
+      { error: "Missing access token." },
+      { status: 401 }
+    );
+  }
+
+  const body = (await request.json()) as { eventId?: string };
+  const eventId = typeof body.eventId === "string" ? body.eventId : "";
+  if (!eventId) {
+    return NextResponse.json(
+      { error: "Event id is required." },
+      { status: 400 }
+    );
+  }
+
+  const supabase = createSupabaseServerClient(accessToken);
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+
+  if (userError || !userData.user) {
+    return NextResponse.json(
+      { error: "Unable to load user session." },
+      { status: 401 }
+    );
+  }
+
+  const { data: org, error: orgError } = await supabase
+    .from("organizations")
+    .select("id, events")
+    .eq("owner_id", userData.user.id)
+    .maybeSingle();
+
+  if (orgError) {
+    return NextResponse.json({ error: orgError.message }, { status: 400 });
+  }
+
+  if (!org) {
+    return NextResponse.json(
+      { error: "Organization profile not found." },
+      { status: 404 }
+    );
+  }
+
+  const existingEvents = Array.isArray(org.events) ? org.events : [];
+  const updatedEvents = existingEvents.filter((event) => event.id !== eventId);
+
+  const { error: updateError } = await supabase
+    .from("organizations")
+    .update({ events: updatedEvents })
+    .eq("id", org.id);
+
+  if (updateError) {
+    return NextResponse.json({ error: updateError.message }, { status: 400 });
+  }
+
+  return NextResponse.json({ ok: true });
 }

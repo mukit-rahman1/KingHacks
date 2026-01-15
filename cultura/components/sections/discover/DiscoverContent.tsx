@@ -13,6 +13,7 @@ type EventItem = {
   date: string
   tags: string[]
   orgName: string
+  imageUrl?: string
 }
 
 type UiEvent = EventItem & {
@@ -69,14 +70,28 @@ export default function DiscoverPage() {
   }, [q])
 
   const filtered = useMemo(() => {
-    if (!cat) return events
+    const normalizedQuery = q.trim().toLowerCase()
     const label =
       categories.find((category) => category.id === cat)?.label.toLowerCase() ??
       cat.toLowerCase()
-    return events.filter((event) =>
-      event.tags.some((tag) => tag.toLowerCase().includes(label))
-    )
-  }, [events, cat])
+
+    return events.filter((event) => {
+      const matchesQuery =
+        !normalizedQuery ||
+        event.title.toLowerCase().includes(normalizedQuery) ||
+        event.description.toLowerCase().includes(normalizedQuery) ||
+        event.orgName.toLowerCase().includes(normalizedQuery) ||
+        event.tags.some((tag) =>
+          tag.toLowerCase().includes(normalizedQuery)
+        )
+
+      const matchesCategory =
+        !cat ||
+        event.tags.some((tag) => tag.toLowerCase().includes(label))
+
+      return matchesQuery && matchesCategory
+    })
+  }, [events, cat, q])
 
   return (
     <div className="space-y-6 px-4 sm:px-6 lg:px-8">
@@ -105,7 +120,7 @@ export default function DiscoverPage() {
           <input type="hidden" name="cat" value={cat} />
           <input
             name="q"
-            defaultValue={searchParams?.q ?? ""}
+            defaultValue={q}
             className="
               w-full rounded-xl border border-[color:var(--input)]
               bg-[color:var(--background)]
@@ -189,6 +204,15 @@ export default function DiscoverPage() {
                 p-5 shadow-sm
               "
             >
+              <div className="h-70 w-full overflow-hidden rounded-xl bg-[color:var(--accent)]/60 mb-4">
+                {e.imageUrl ? (
+                  <img
+                    src={e.imageUrl}
+                    alt={e.title}
+                    className="h-full w-full object-cover"
+                  />
+                ) : null}
+              </div>
               {/* subtle corner glow */}
               <div
                 className="
