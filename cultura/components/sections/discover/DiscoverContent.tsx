@@ -20,21 +20,43 @@ type UiEvent = EventItem & {
   dateHuman: string
   timeHuman: string
   location: string
+  priceLabel: string
+  featured: boolean
 }
 
 const toHumanDate = (value: string) => {
   const parsed = new Date(value)
   if (Number.isNaN(parsed.getTime())) return value || "TBD"
   return parsed.toLocaleDateString(undefined, {
-    month: "short",
+    month: "long",
     day: "numeric",
     year: "numeric",
   })
 }
 
+const categoryFromEvent = (event: EventItem, activeCat: string) => {
+  // if URL cat is set, use it
+  const fromParam = categories.find((c) => c.id === activeCat)?.label
+  if (fromParam) return fromParam
+
+  // else try infer from tags
+  const lowerTags = event.tags.map((t) => t.toLowerCase())
+  return (
+    categories.find((c) =>
+      lowerTags.some((t) => t.includes(c.label.toLowerCase()) || t.includes(c.id.toLowerCase()))
+    )?.label ?? "Community"
+  )
+}
+
+const chipActiveClass =
+  "bg-[color:var(--primary)] text-[color:var(--primary-foreground)] border-transparent shadow-sm"
+const chipIdleClass =
+  "bg-[color:var(--background)] text-[color:var(--foreground)] border-[color:var(--border)] hover:bg-[color:var(--muted)]"
+
 export default function DiscoverPage() {
   const searchParams = useSearchParams()
-  const q = (searchParams.get("q") ?? "").toLowerCase()
+  const qParam = searchParams.get("q") ?? ""
+  const q = qParam.toLowerCase()
   const cat = searchParams.get("cat") ?? ""
 
   const [events, setEvents] = useState<UiEvent[]>([])
@@ -56,11 +78,15 @@ export default function DiscoverPage() {
       }
 
       const payload = (await response.json()) as { events: EventItem[] }
-      const mapped: UiEvent[] = (payload.events ?? []).map((event) => ({
+
+      const mapped: UiEvent[] = (payload.events ?? []).map((event, idx) => ({
         ...event,
         dateHuman: toHumanDate(event.date),
-        timeHuman: "TBD",
+        timeHuman: "6:00 PM",
         location: "Community venue",
+        // dummy, but gives you the mock UI
+        priceLabel: idx % 3 === 0 ? "$45" : idx % 3 === 1 ? "Free" : "$25",
+        featured: idx % 2 === 0,
       }))
 
       setEvents(mapped)
@@ -72,6 +98,7 @@ export default function DiscoverPage() {
 
   const filtered = useMemo(() => {
     const normalizedQuery = q.trim().toLowerCase()
+
     const label =
       categories.find((category) => category.id === cat)?.label.toLowerCase() ??
       cat.toLowerCase()
@@ -92,73 +119,73 @@ export default function DiscoverPage() {
   }, [events, cat, q])
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8 px-4 sm:px-6 lg:px-8">
-      {/* Header (Categories rhythm) */}
-      <div>
-        <h1 className="font-header text-4xl font-extrabold mt-5 tracking-tight text-[color:var(--foreground)]">
-          Discover
+    <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+      {/* ===== HERO HEADER (centered like mock) ===== */}
+      <div className="mx-auto flex max-w-4xl flex-col items-center text-center pt-10 pb-10">
+        <h1 className="font-header text-5xl font-extrabold tracking-tight text-[color:var(--foreground)] md:text-6xl">
+          Discover{" "}
+          <span className="text-heritage">Cultural Events</span>
         </h1>
-        <p className="mt-2 max-w-xl text-[color:var(--muted-foreground)]">
-          Search + filter events across communities.
+        <p className="mt-4 max-w-2xl text-lg text-[color:var(--muted-foreground)]">
+          Explore events that celebrate heritage, art, music, and community
         </p>
+
+        {/* Search pill */}
+        <form action="/discover" method="get" className="mt-10 w-full">
+          <input type="hidden" name="cat" value={cat} />
+          <div
+            className="
+              mx-auto flex w-full max-w-3xl items-center
+              rounded-full border border-[color:var(--border)]
+              bg-[color:var(--card)]
+              px-6 py-4 shadow-sm
+              focus-within:ring-2 focus-within:ring-[color:var(--ring)]
+              focus-within:ring-offset-2 focus-within:ring-offset-[color:var(--background)]
+            "
+          >
+            <input
+              name="q"
+              defaultValue={qParam}
+              placeholder="Search events, locations, or organizers..."
+              className="
+                w-full bg-transparent text-base text-[color:var(--foreground)]
+                placeholder:text-[color:var(--muted-foreground)]
+                focus:outline-none
+              "
+            />
+            <button
+              type="submit"
+              className="
+                ml-4 rounded-full bg-[color:var(--primary)]
+                px-6 py-2 text-sm font-semibold text-[color:var(--primary-foreground)]
+                shadow-sm transition hover:brightness-105 active:scale-[0.99]
+              "
+            >
+              Search
+            </button>
+          </div>
+
+          {/* Clear link */}
+          {(qParam || cat) && (
+            <div className="mt-3 text-sm">
+              <Link
+                href="/discover"
+                className="font-semibold text-[color:var(--primary)] hover:opacity-90"
+              >
+                Clear filters
+              </Link>
+            </div>
+          )}
+        </form>
       </div>
 
-      {/* Search */}
-      <form
-        className="
-          flex w-full max-w-3xl gap-2
-          rounded-2xl border border-[color:var(--border)]
-          bg-[color:var(--card)]
-          p-2 shadow-sm
-        "
-        action="/discover"
-        method="get"
-      >
-        <input type="hidden" name="cat" value={cat} />
-        <input
-          name="q"
-          defaultValue={searchParams.get("q") ?? ""}
-          className="
-            w-full rounded-xl border border-[color:var(--input)]
-            bg-[color:var(--background)]
-            px-3 py-2 text-sm text-[color:var(--foreground)]
-            placeholder:text-[color:var(--muted-foreground)]
-            focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)] focus:ring-offset-2 focus:ring-offset-[color:var(--background)]
-          "
-          placeholder="Search: potluck, language, dance..."
-        />
-        <button
-          className="
-            rounded-xl bg-[color:var(--primary)] px-4 py-2
-            text-sm font-semibold text-[color:var(--primary-foreground)]
-            shadow-sm transition hover:brightness-105 active:scale-[0.99]
-          "
-          type="submit"
-        >
-          Search
-        </button>
-        <Link
-          className="
-            rounded-xl border border-[color:var(--border)]
-            bg-[color:var(--background)]
-            px-4 py-2 text-sm font-semibold text-[color:var(--foreground)]
-            transition hover:bg-[color:var(--muted)]
-          "
-          href="/discover"
-        >
-          Clear
-        </Link>
-      </form>
-
-      {/* Filters */}
-      <div className="flex flex-wrap gap-2">
+      {/* ===== FILTER CHIPS (centered) ===== */}
+      <div className="flex flex-wrap items-center justify-center gap-3 pb-6">
         <Link
           href="/discover"
           className={[
-            "rounded-full border px-3 py-1 text-sm font-semibold transition",
-            !cat
-              ? "border-[color:var(--primary)] bg-[color:var(--secondary)] text-[color:var(--secondary-foreground)] shadow-sm"
-              : "border-[color:var(--border)] bg-[color:var(--background)] text-[color:var(--muted-foreground)] hover:bg-[color:var(--muted)]",
+            "rounded-full border px-4 py-2 text-sm font-semibold transition",
+            !cat ? chipActiveClass : chipIdleClass,
           ].join(" ")}
         >
           All
@@ -169,12 +196,12 @@ export default function DiscoverPage() {
           return (
             <Link
               key={c.id}
-              href={`/discover?cat=${encodeURIComponent(c.id)}`}
+              href={`/discover?cat=${encodeURIComponent(c.id)}${
+                qParam ? `&q=${encodeURIComponent(qParam)}` : ""
+              }`}
               className={[
-                "rounded-full border px-3 py-1 text-sm font-semibold transition",
-                active
-                  ? "border-[color:var(--accent)] bg-[color:var(--accent)] text-[color:var(--accent-foreground)] shadow-sm"
-                  : "border-[color:var(--border)] bg-[color:var(--background)] text-[color:var(--muted-foreground)] hover:bg-[color:var(--muted)]",
+                "rounded-full border px-4 py-2 text-sm font-semibold transition",
+                active ? chipActiveClass : chipIdleClass,
               ].join(" ")}
             >
               {c.label}
@@ -183,141 +210,164 @@ export default function DiscoverPage() {
         })}
       </div>
 
-      {/* Event grid (spacing aligned) */}
-      <div className="grid gap-5 md:grid-cols-2">
+      {/* ===== COUNT ===== */}
+      <p className="pb-8 text-center text-[color:var(--muted-foreground)]">
+        Showing{" "}
+        <span className="font-semibold text-[color:var(--foreground)]">
+          {isLoading ? "…" : filtered.length}
+        </span>{" "}
+        events
+      </p>
+
+      {/* ===== GRID (3 per row on desktop) ===== */}
+      <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
         {filtered.map((e) => {
-          const catLabel =
-            categories.find((c) =>
-              e.tags.some((tag) =>
-                tag.toLowerCase().includes(c.label.toLowerCase())
-              )
-            )?.label ?? "Category"
+          const catLabel = categoryFromEvent(e, cat)
 
           return (
             <article
               key={e.id}
               className="
-                group relative overflow-hidden
-                rounded-2xl border border-[color:var(--border)]
+                overflow-hidden rounded-3xl
+                border border-[color:var(--border)]
                 bg-[color:var(--card)]
-                p-6 shadow-sm transition
+                shadow-sm transition
                 hover:-translate-y-0.5 hover:shadow-md
               "
             >
-              {/* Soft accent glow */}
-              <div
-                className="
-                  pointer-events-none absolute -right-24 -top-24 h-56 w-56 rounded-full
-                  bg-[color:var(--brand-accent)]/10 blur-2xl
-                "
-              />
-
-              {/* Image (fixed Tailwind height) */}
-              <div className="relative mb-4 h-44 w-full overflow-hidden rounded-xl bg-[color:var(--secondary)]">
+              {/* Image header */}
+              <div className="relative h-52 w-full bg-[color:var(--muted)]">
                 {e.imageUrl ? (
-                  <img
-                    src={e.imageUrl}
-                    alt={e.title}
-                    className="h-full w-full object-cover"
-                    loading="lazy"
-                  />
+                  <>
+                    <img
+                      src={e.imageUrl}
+                      alt={e.title}
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                    />
+
+                    {/* ✅ gradient overlay: transparent -> black */}
+                    <div
+                      className="
+                        pointer-events-none absolute inset-0
+                        bg-gradient-to-t
+                        from-black/80 via-black/25 to-transparent
+                      "
+                    />
+                  </>
                 ) : (
                   <div className="h-full w-full bg-[color:var(--accent)]/10" />
                 )}
-              </div>
 
-              <div className="relative flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="font-header text-xl font-bold text-[color:var(--foreground)]">
-                    {e.title}
-                  </h3>
-                  <p className="mt-1 text-sm text-[color:var(--muted-foreground)]">
-                    {e.dateHuman} • {e.timeHuman} • {e.location}
-                  </p>
-                </div>
-
-                <span
-                  className="
-                    shrink-0 rounded-full
-                    border border-[color:var(--border)]
-                    bg-[color:var(--secondary)]
-                    px-3 py-1 text-sm font-semibold
-                    text-[color:var(--secondary-foreground)]
-                  "
-                >
-                  {catLabel}
-                </span>
-              </div>
-
-              <p className="relative mt-3 text-[color:var(--muted-foreground)]">
-                {e.description}
-              </p>
-
-              <div className="relative mt-4 flex flex-wrap gap-2">
-                {e.tags.map((t) => (
+                {/* Category badge (top-left) */}
+                <div className="absolute left-4 top-4">
                   <span
-                    key={t}
                     className="
-                      rounded-full border border-[color:var(--border)]
-                      bg-[color:var(--background)]
-                      px-3 py-1 text-sm
-                      text-[color:var(--foreground)]
+                      rounded-full bg-[color:var(--primary)]
+                      px-3 py-1 text-xs font-semibold
+                      text-[color:var(--primary-foreground)]
+                      shadow-sm
                     "
                   >
-                    <span className="mr-1 text-[color:var(--accent)]">•</span>
-                    {t}
+                    {catLabel}
                   </span>
-                ))}
+                </div>
+
+                {/* Featured badge (top-right) */}
+                {e.featured && (
+                  <div className="absolute right-4 top-4">
+                    <span
+                      className="
+                        rounded-full bg-[color:var(--accent)]
+                        px-3 py-1 text-xs font-semibold
+                        text-[color:var(--accent-foreground)]
+                        shadow-sm
+                      "
+                    >
+                      Featured
+                    </span>
+                  </div>
+                )}
+
+                {/* Price pill (bottom-right) */}
+                <div className="absolute bottom-4 right-4">
+                  <span className="rounded-full bg-white/90 px-4 py-1 text-sm font-semibold text-black shadow-sm">
+                    {e.priceLabel}
+                  </span>
+                </div>
               </div>
 
-              <div className="relative mt-5 flex items-center justify-between gap-3">
+              {/* Body */}
+              <div className="p-6">
+                <h3 className="font-header text-2xl font-extrabold text-[color:var(--foreground)]">
+                  {e.title}
+                </h3>
+
+                {/* Details rows */}
+                <div className="mt-4 space-y-3 text-[color:var(--muted-foreground)]">
+                  <div className="flex items-center gap-3">
+                    <span className="grid h-8 w-8 place-items-center rounded-full border border-[color:var(--border)] bg-[color:var(--background)] text-xs">
+                      📅
+                    </span>
+                    <span>{e.dateHuman}</span>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <span className="grid h-8 w-8 place-items-center rounded-full border border-[color:var(--border)] bg-[color:var(--background)] text-xs">
+                      ⏰
+                    </span>
+                    <span>{e.timeHuman}</span>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <span className="grid h-8 w-8 place-items-center rounded-full border border-[color:var(--border)] bg-[color:var(--background)] text-xs">
+                      📍
+                    </span>
+                    <span>{e.location}</span>
+                  </div>
+                </div>
+
+                <div className="my-5 h-px w-full bg-[color:var(--border)]" />
+
                 <p className="text-sm text-[color:var(--muted-foreground)]">
-                  Organizer:{" "}
+                  By{" "}
                   <span className="font-semibold text-[color:var(--foreground)]">
                     {e.orgName}
                   </span>
                 </p>
-
-                <button
-                  className="
-                    rounded-xl bg-[color:var(--primary)]
-                    px-4 py-2 text-sm font-semibold
-                    text-[color:var(--primary-foreground)]
-                    shadow-sm transition hover:brightness-105 active:scale-[0.99]
-                  "
-                  type="button"
-                >
-                  RSVP
-                </button>
               </div>
             </article>
           )
         })}
       </div>
 
-      {/* States / Empty */}
-      {isLoading ? (
-        <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--card)] p-6 shadow-sm">
-          <p className="font-header text-lg font-bold text-[color:var(--foreground)]">
-            Loading events...
-          </p>
-        </div>
-      ) : error ? (
-        <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--card)] p-6 shadow-sm">
-          <p className="font-header text-lg font-bold text-[color:var(--foreground)]">
-            {error}
-          </p>
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--card)] p-6 shadow-sm">
-          <p className="font-header text-lg font-bold text-[color:var(--foreground)]">
-            No events match your search.
-          </p>
-          <p className="mt-1 text-[color:var(--muted-foreground)]">
-            Try a different keyword or clear filters.
-          </p>
-        </div>
-      ) : null}
+      {/* ===== STATES ===== */}
+      <div className="mt-10">
+        {isLoading ? (
+          <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--card)] p-6 shadow-sm">
+            <p className="font-header text-lg font-bold text-[color:var(--foreground)]">
+              Loading events...
+            </p>
+          </div>
+        ) : error ? (
+          <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--card)] p-6 shadow-sm">
+            <p className="font-header text-lg font-bold text-[color:var(--foreground)]">
+              {error}
+            </p>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--card)] p-6 shadow-sm">
+            <p className="font-header text-lg font-bold text-[color:var(--foreground)]">
+              No events match your search.
+            </p>
+            <p className="mt-1 text-[color:var(--muted-foreground)]">
+              Try a different keyword or clear filters.
+            </p>
+          </div>
+        ) : null}
+      </div>
+
+      <div className="h-20" />
     </div>
   )
 }
