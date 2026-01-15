@@ -52,7 +52,6 @@ export default function Navbar({
     { href: "/categories", label: "Categories" },
     { href: "/organizers", label: "Organizers" },
     { href: "/chat", label: "Chat" },
-    { href: "/about", label: "About" },
   ]
 
   const displayRole =
@@ -295,7 +294,9 @@ export default function Navbar({
     >
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/" 
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        className="flex items-center gap-2">
           <div
             className="
               grid h-9 w-9 place-items-center rounded-xl
@@ -322,6 +323,7 @@ export default function Navbar({
             <Link
               key={item.href}
               href={item.href}
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               {item.label}
@@ -334,22 +336,10 @@ export default function Navbar({
           {displayRole === "guest" && (
             <>
               <Link
-                href="/organizer/signup"
-                className="text-sm font-semibold text-primary hover:opacity-90"
-              >
-                Become an Organizer
-              </Link>
-              <Link
                 href="/login"
                 className="rounded-xl border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
               >
                 Sign in
-              </Link>
-              <Link
-                href="/signup"
-                className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
-              >
-                Sign up
               </Link>
             </>
           )}
@@ -465,7 +455,10 @@ export default function Navbar({
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={() => setOpen(false)}
+                onClick={() => {
+                  setOpen(false);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
                 className="
                   group flex w-full items-center justify-between
                   rounded-xl px-3 py-2.5
@@ -492,27 +485,15 @@ export default function Navbar({
           <div className="mt-4 rounded-2xl border border-border bg-card/60 p-3">
             {role === "guest" && (
               <div className="space-y-2">
-                <Link
-                  href="/signup"
-                  onClick={() => setOpen(false)}
-                  className="block w-full rounded-xl bg-primary px-4 py-2.5 text-center text-sm font-semibold text-primary-foreground hover:opacity-90"
-                >
-                  Sign up
-                </Link>
+                
                 <Link
                   href="/login"
                   onClick={() => setOpen(false)}
-                  className="block w-full rounded-xl border border-border bg-background px-4 py-2.5 text-center text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+                  className="block w-full rounded-xl border border-border bg-brand-primary px-4 py-2.5 text-center text-sm font-semibold text-foreground transition-colors hover:bg-muted"
                 >
                   Sign in
                 </Link>
-                <Link
-                  href="/organizer/signup"
-                  onClick={() => setOpen(false)}
-                  className="block w-full rounded-xl px-4 py-2.5 text-center text-sm font-semibold text-primary transition-colors hover:bg-muted"
-                >
-                  Become an Organizer
-                </Link>
+                
               </div>
             )}
 
