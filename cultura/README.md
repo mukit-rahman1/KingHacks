@@ -68,6 +68,21 @@ BEDROCK_PROMPT_TEMPLATE=You are a community finder. Use the knowledge base only.
 ### Updating the chatbot knowledge
 When you add or change organizations/events, update the source document in S3 and re-run the ingestion job for the knowledge base.
 
+## Chatbase widget (optional alternative)
+This app can also use the Chatbase widget on `/chat`.
+
+Env vars:
+```
+NEXT_PUBLIC_CHATBASE_CHATBOT_ID=your_chatbase_id
+NEXT_PUBLIC_CHATBASE_DOMAIN=www.chatbase.co
+CHATBOT_IDENTITY_SECRET=your_chatbase_identity_secret
+```
+
+Install dependency:
+```bash
+npm install
+```
+
 ## IBM Cloud Object Storage uploads
 This app supports public image uploads for profiles and events via IBM COS.
 

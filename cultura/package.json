@@ -12,6 +12,7 @@
     "@aws-sdk/client-bedrock-agent-runtime": "^3.888.0",
     "@supabase/supabase-js": "^2.49.1",
     "ibm-cos-sdk": "^1.14.2",
+    "jsonwebtoken": "^9.0.2",
     "next": "16.1.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
