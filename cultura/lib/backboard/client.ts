@@ -24,9 +24,9 @@ const assistantName =
   process.env.BACKBOARD_ASSISTANT_NAME ?? "Cultura RAG";
 const systemPrompt =
   process.env.BACKBOARD_SYSTEM_PROMPT ??
-  "Answer only using the uploaded documents. If the answer is not in the documents, say: \"Sorry, there doesn't seem to be clubs like that right now. Check again later or make one!\" When asked for a club or organization, respond with the name and a short tag summary in this format: \"Organization: <name> — Tags: <tag1, tag2, ...>\".";
-const chatGuardPrompt =
-  process.env.BACKBOARD_CHAT_GUARD_PROMPT ?? systemPrompt;
+  "Answer only using the uploaded documents. If you find relevant matches, list up to 3. If nothing matches, say: \"DEBUG: no matches found in documents.\" When asked for a club or organization, respond with the name and a short tag summary in this format: \"Organization: <name> — Tags: <tag1, tag2, ...>\".";
+const chatGuardPrompt = process.env.BACKBOARD_CHAT_GUARD_PROMPT ?? "";
+const chatMemory = process.env.BACKBOARD_CHAT_MEMORY ?? "Documents";
 const embeddingProvider = process.env.BACKBOARD_EMBEDDING_PROVIDER ?? "";
 const embeddingModelName = process.env.BACKBOARD_EMBEDDING_MODEL_NAME ?? "";
 const embeddingDimsRaw = process.env.BACKBOARD_EMBEDDING_DIMS ?? "";
@@ -487,10 +487,18 @@ export async function sendBackboardChatMessage(params: { message: string }) {
     return { ok: false, reply: "", error: "Unable to create chat thread." };
   }
 
+  console.log("Backboard chat thread:", activeThreadId);
+
+  const basePrompt =
+    chatGuardPrompt ||
+    "Search the uploaded documents for matching organizations. Return up to 3 in this format: Organization: <name> — Tags: <tag1, tag2, ...>. If no matches, say the exact fallback sentence.";
+  const content = `${basePrompt}\n\nUser request: ${params.message}`;
+  console.log("Backboard chat content:", content);
+
   const body = new URLSearchParams({
-    content: `${chatGuardPrompt}\n\n${params.message}`,
+    content,
     stream: "false",
-    memory: "Auto",
+    memory: chatMemory,
   });
 
   const response = await fetch(
