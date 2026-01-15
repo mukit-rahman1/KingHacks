@@ -24,9 +24,6 @@ export function HeroSection() {
             ">
             ✨ <span>Every culture has a story</span>
         </div>
-
-
-
           {/* Heading */}
           <h1 className="mt-8 font-header font-bold text-[3.2rem] leading-[1.05] text-foreground md:text-[4.3rem]">
             <span className="block">Where</span>
@@ -46,14 +43,14 @@ export function HeroSection() {
           {/* CTAs (basic, semantic) */}
           <div className="mt-10 flex flex-col gap-3 sm:flex-row">
             <Link
-              href="/events"
+              href="/categories"
               className="inline-flex h-12 items-center justify-center rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground hover:opacity-90"
             >
               Explore Events →
             </Link>
 
             <Link
-              href="/orgProfile"
+              href="/signup"
               className="inline-flex h-12 items-center justify-center rounded-xl border border-border bg-card px-6 text-sm font-semibold text-foreground hover:bg-muted"
             >
               Sign up to receive notifications 🔔

@@ -24,9 +24,7 @@ type UiEvent = EventItem & {
 
 const toHumanDate = (value: string) => {
   const parsed = new Date(value)
-  if (Number.isNaN(parsed.getTime())) {
-    return value || "TBD"
-  }
+  if (Number.isNaN(parsed.getTime())) return value || "TBD"
   return parsed.toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",
@@ -38,6 +36,7 @@ export default function DiscoverPage() {
   const searchParams = useSearchParams()
   const q = (searchParams.get("q") ?? "").toLowerCase()
   const cat = searchParams.get("cat") ?? ""
+
   const [events, setEvents] = useState<UiEvent[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -49,6 +48,7 @@ export default function DiscoverPage() {
 
       const queryString = q ? `?q=${encodeURIComponent(q)}` : ""
       const response = await fetch(`/api/events${queryString}`)
+
       if (!response.ok) {
         setError("Unable to load events.")
         setIsLoading(false)
@@ -56,12 +56,13 @@ export default function DiscoverPage() {
       }
 
       const payload = (await response.json()) as { events: EventItem[] }
-      const mapped = (payload.events ?? []).map((event) => ({
+      const mapped: UiEvent[] = (payload.events ?? []).map((event) => ({
         ...event,
         dateHuman: toHumanDate(event.date),
         timeHuman: "TBD",
         location: "Community venue",
       }))
+
       setEvents(mapped)
       setIsLoading(false)
     }
@@ -81,78 +82,73 @@ export default function DiscoverPage() {
         event.title.toLowerCase().includes(normalizedQuery) ||
         event.description.toLowerCase().includes(normalizedQuery) ||
         event.orgName.toLowerCase().includes(normalizedQuery) ||
-        event.tags.some((tag) =>
-          tag.toLowerCase().includes(normalizedQuery)
-        )
+        event.tags.some((tag) => tag.toLowerCase().includes(normalizedQuery))
 
       const matchesCategory =
-        !cat ||
-        event.tags.some((tag) => tag.toLowerCase().includes(label))
+        !cat || event.tags.some((tag) => tag.toLowerCase().includes(label))
 
       return matchesQuery && matchesCategory
     })
   }, [events, cat, q])
 
   return (
-    <div className="space-y-6 px-4 sm:px-6 lg:px-8">
-      {/* Header */}
-      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h1 className="font-header text-4xl font-extrabold tracking-tight text-[color:var(--foreground)]">
-            Discover
-          </h1>
-          <p className="mt-2 text-[color:var(--muted-foreground)]">
-            Search + filter events across communities.
-          </p>
-        </div>
-
-        {/* Search */}
-        <form
-          className="
-            flex w-full max-w-xl gap-2
-            rounded-2xl border border-[color:var(--border)]
-            bg-[color:var(--card)]
-            p-2 shadow-sm
-          "
-          action="/discover"
-          method="get"
-        >
-          <input type="hidden" name="cat" value={cat} />
-          <input
-            name="q"
-            defaultValue={q}
-            className="
-              w-full rounded-xl border border-[color:var(--input)]
-              bg-[color:var(--background)]
-              px-3 py-2 text-sm text-[color:var(--foreground)]
-              placeholder:text-[color:var(--muted-foreground)]
-              focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)] focus:ring-offset-2 focus:ring-offset-[color:var(--background)]
-            "
-            placeholder="Search: potluck, language, dance..."
-          />
-          <button
-            className="
-              rounded-xl bg-[color:var(--primary)] px-4 py-2
-              text-sm font-semibold text-[color:var(--primary-foreground)]
-              shadow-sm transition hover:brightness-105 active:scale-[0.99]
-            "
-            type="submit"
-          >
-            Search
-          </button>
-          <Link
-            className="
-              rounded-xl border border-[color:var(--border)]
-              bg-[color:var(--background)]
-              px-4 py-2 text-sm font-semibold text-[color:var(--foreground)]
-              transition hover:bg-[color:var(--muted)]
-            "
-            href="/discover"
-          >
-            Clear
-          </Link>
-        </form>
+    <div className="mx-auto max-w-6xl space-y-8 px-4 sm:px-6 lg:px-8">
+      {/* Header (Categories rhythm) */}
+      <div>
+        <h1 className="font-header text-4xl font-extrabold mt-5 tracking-tight text-[color:var(--foreground)]">
+          Discover
+        </h1>
+        <p className="mt-2 max-w-xl text-[color:var(--muted-foreground)]">
+          Search + filter events across communities.
+        </p>
       </div>
+
+      {/* Search */}
+      <form
+        className="
+          flex w-full max-w-3xl gap-2
+          rounded-2xl border border-[color:var(--border)]
+          bg-[color:var(--card)]
+          p-2 shadow-sm
+        "
+        action="/discover"
+        method="get"
+      >
+        <input type="hidden" name="cat" value={cat} />
+        <input
+          name="q"
+          defaultValue={searchParams.get("q") ?? ""}
+          className="
+            w-full rounded-xl border border-[color:var(--input)]
+            bg-[color:var(--background)]
+            px-3 py-2 text-sm text-[color:var(--foreground)]
+            placeholder:text-[color:var(--muted-foreground)]
+            focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)] focus:ring-offset-2 focus:ring-offset-[color:var(--background)]
+          "
+          placeholder="Search: potluck, language, dance..."
+        />
+        <button
+          className="
+            rounded-xl bg-[color:var(--primary)] px-4 py-2
+            text-sm font-semibold text-[color:var(--primary-foreground)]
+            shadow-sm transition hover:brightness-105 active:scale-[0.99]
+          "
+          type="submit"
+        >
+          Search
+        </button>
+        <Link
+          className="
+            rounded-xl border border-[color:var(--border)]
+            bg-[color:var(--background)]
+            px-4 py-2 text-sm font-semibold text-[color:var(--foreground)]
+            transition hover:bg-[color:var(--muted)]
+          "
+          href="/discover"
+        >
+          Clear
+        </Link>
+      </form>
 
       {/* Filters */}
       <div className="flex flex-wrap gap-2">
@@ -187,39 +183,48 @@ export default function DiscoverPage() {
         })}
       </div>
 
-      {/* Event grid */}
-      <div className="grid gap-4 md:grid-cols-2">
+      {/* Event grid (spacing aligned) */}
+      <div className="grid gap-5 md:grid-cols-2">
         {filtered.map((e) => {
           const catLabel =
             categories.find((c) =>
-              e.tags.some((tag) => tag.toLowerCase().includes(c.label.toLowerCase()))
+              e.tags.some((tag) =>
+                tag.toLowerCase().includes(c.label.toLowerCase())
+              )
             )?.label ?? "Category"
+
           return (
             <article
               key={e.id}
               className="
-                relative overflow-hidden rounded-2xl
-                border border-[color:var(--border)]
+                group relative overflow-hidden
+                rounded-2xl border border-[color:var(--border)]
                 bg-[color:var(--card)]
-                p-5 shadow-sm
+                p-6 shadow-sm transition
+                hover:-translate-y-0.5 hover:shadow-md
               "
             >
-              <div className="h-70 w-full overflow-hidden rounded-xl bg-[color:var(--accent)]/60 mb-4">
-                {e.imageUrl ? (
-                  <img
-                    src={e.imageUrl}
-                    alt={e.title}
-                    className="h-full w-full object-cover"
-                  />
-                ) : null}
-              </div>
-              {/* subtle corner glow */}
+              {/* Soft accent glow */}
               <div
                 className="
                   pointer-events-none absolute -right-24 -top-24 h-56 w-56 rounded-full
                   bg-[color:var(--brand-accent)]/10 blur-2xl
                 "
               />
+
+              {/* Image (fixed Tailwind height) */}
+              <div className="relative mb-4 h-44 w-full overflow-hidden rounded-xl bg-[color:var(--secondary)]">
+                {e.imageUrl ? (
+                  <img
+                    src={e.imageUrl}
+                    alt={e.title}
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="h-full w-full bg-[color:var(--accent)]/10" />
+                )}
+              </div>
 
               <div className="relative flex items-start justify-between gap-3">
                 <div>
@@ -244,11 +249,11 @@ export default function DiscoverPage() {
                 </span>
               </div>
 
-              <p className="mt-3 text-[color:var(--muted-foreground)]">
+              <p className="relative mt-3 text-[color:var(--muted-foreground)]">
                 {e.description}
               </p>
 
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="relative mt-4 flex flex-wrap gap-2">
                 {e.tags.map((t) => (
                   <span
                     key={t}
@@ -265,7 +270,7 @@ export default function DiscoverPage() {
                 ))}
               </div>
 
-              <div className="mt-4 flex items-center justify-between gap-3">
+              <div className="relative mt-5 flex items-center justify-between gap-3">
                 <p className="text-sm text-[color:var(--muted-foreground)]">
                   Organizer:{" "}
                   <span className="font-semibold text-[color:var(--foreground)]">
@@ -290,7 +295,7 @@ export default function DiscoverPage() {
         })}
       </div>
 
-      {/* Empty state */}
+      {/* States / Empty */}
       {isLoading ? (
         <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--card)] p-6 shadow-sm">
           <p className="font-header text-lg font-bold text-[color:var(--foreground)]">
