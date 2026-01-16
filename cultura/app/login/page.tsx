@@ -44,7 +44,7 @@ export default function LoginPage() {
           organization: { id: string } | null
         }
         if (payload.organization) {
-          router.push("/events")
+          router.push("/discover")
           setIsSubmitting(false)
           return
         }
@@ -61,7 +61,7 @@ export default function LoginPage() {
           profile: { username: string } | null
         }
         if (payload.profile?.username) {
-          router.push("/events")
+          router.push("/discover")
         } else {
           router.push("/onboarding/select")
         }

@@ -51,7 +51,7 @@ export default function IndividualOnboardingPage() {
       return
     }
 
-    router.push("/events")
+    router.push("/discover")
   }
 
   return (

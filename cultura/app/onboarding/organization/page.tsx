@@ -53,7 +53,7 @@ export default function OrganizationOnboardingPage() {
       return
     }
 
-    router.push("/events")
+    router.push("/discover")
   }
 
   return (
