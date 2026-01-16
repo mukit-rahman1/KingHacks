@@ -1,12 +1,5 @@
 import { NextResponse } from "next/server";
 
-import {
-  addBackboardMemory,
-  isBackboardSearchEnabled,
-  searchBackboard,
-  uploadBackboardAssistantDocument,
-  upsertBackboardDocument,
-} from "@/lib/backboard/client";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 //Event Input Type
@@ -43,45 +36,17 @@ const buildSearchQuery = (query: string | null, tags: string[]) => {
   return tags.length ? tags.join(" ") : "";
 };
 
-const toBackboardEvent = (item: {
-  id: string;
-  data?: Record<string, unknown>;
-}) => {
-  const data = item.data ?? {};
-  const title =
-    typeof data.title === "string"
-      ? data.title
-      : typeof data.name === "string"
-        ? data.name
-        : "";
-  const description =
-    typeof data.description === "string" ? data.description : "";
-  const date =
-    typeof data.date === "string"
-      ? data.date
-      : typeof data.starts_at === "string"
-        ? data.starts_at
-        : "";
-  const tags = normalizeTags(data.tags);
-  const orgName =
-    typeof data.orgName === "string"
-      ? data.orgName
-      : typeof data.organization === "string"
-        ? data.organization
-        : "Organization";
+const matchesEvent = (event: EventItem, query: string) => {
+  const lowered = query.toLowerCase();
+  const tokens = lowered.split(/\s+/).filter(Boolean);
+  if (!tokens.length) return true;
 
-  if (!title && !description && !date && tags.length === 0) {
-    return null;
-  }
-
-  return {
-    id: item.id,
-    title: title || "Event",
-    description,
-    date,
-    tags,
-    orgName,
-  };
+  if (event.title.toLowerCase().includes(lowered)) return true;
+  if (event.description.toLowerCase().includes(lowered)) return true;
+  if (event.orgName.toLowerCase().includes(lowered)) return true;
+  return event.tags.some((tag) =>
+    tokens.some((token) => tag.toLowerCase().includes(token))
+  );
 };
 
 //Get Events Function
@@ -141,29 +106,11 @@ export async function GET(request: Request) {
   });
 
   const searchQuery = buildSearchQuery(query, orgTags);
-  if (isBackboardSearchEnabled() && searchQuery) {
-    const { items } = await searchBackboard({
-      query: searchQuery,
-      limit: 50,
-      filters: { type: "event" },
-    });
+  const filteredEvents = searchQuery
+    ? events.filter((event) => matchesEvent(event, searchQuery))
+    : events;
 
-    const backboardEvents = items
-      .map((item) => toBackboardEvent(item))
-      .filter((item): item is EventItem => Boolean(item));
-
-    if (backboardEvents.length > 0) {
-      return NextResponse.json({ events: backboardEvents });
-    }
-
-    const ids = new Set(items.map((item) => item.id).filter(Boolean));
-    if (ids.size > 0) {
-      const filteredByIds = events.filter((event) => ids.has(event.id));
-      return NextResponse.json({ events: filteredByIds });
-    }
-  }
-
-  return NextResponse.json({ events });
+  return NextResponse.json({ events: filteredEvents });
 }
 
 //Create Event Function
@@ -250,45 +197,6 @@ export async function POST(request: Request) {
   if (updateError) {
     return NextResponse.json({ error: updateError.message }, { status: 400 });
   }
-
-  const orgName = typeof org.name === "string" ? org.name : "Organization";
-  await upsertBackboardDocument({
-    id: newEvent.id,
-    type: "event",
-    text: `${title}\n${description}\n${tags.join(" ")}`.trim(),
-    metadata: {
-      title,
-      description,
-      date,
-      tags,
-      orgName,
-      imageUrl,
-    },
-  });
-  await addBackboardMemory({
-    content: `${title}\n${description}\n${tags.join(" ")}`.trim(),
-    metadata: {
-      type: "event",
-      id: newEvent.id,
-      title,
-      description,
-      date,
-      tags,
-      orgName,
-      imageUrl,
-    },
-  });
-  await uploadBackboardAssistantDocument({
-    filename: `event-${newEvent.id}.txt`,
-    content: [
-      `Event: ${title}`,
-      `Organization: ${orgName}`,
-      `Description: ${description || "N/A"}`,
-      `Date: ${date || "TBD"}`,
-      `Tags: ${tags.length ? tags.join(", ") : "N/A"}`,
-      imageUrl ? `Image: ${imageUrl}` : "",
-    ].join("\n"),
-  });
 
   return NextResponse.json({ ok: true, event: newEvent });
 }

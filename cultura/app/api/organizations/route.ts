@@ -1,10 +1,5 @@
 import { NextResponse } from "next/server";
 
-import {
-  addBackboardMemory,
-  uploadBackboardAssistantDocument,
-  upsertBackboardDocument,
-} from "@/lib/backboard/client";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 //To Slug Function
@@ -14,9 +9,6 @@ const toSlug = (value: string) =>
     .trim()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)+/g, "");
-
-const buildOrgText = (name: string, description: string, tags: string[]) =>
-  `${name}\n${description}\n${tags.join(" ")}`.trim();
 
 //Get Organization Function
 export async function GET(request: Request) {
@@ -114,7 +106,7 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
-  
+
   if (existingOrg) {
     const { error: updateError } = await supabase
       .from("organizations")
@@ -132,37 +124,6 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-
-    await upsertBackboardDocument({
-      id: existingOrg.id,
-      type: "organization",
-      text: buildOrgText(name, description, tags),
-      metadata: {
-        name,
-        description,
-        tags,
-        owner_id: userData.user.id,
-      },
-    });
-    await addBackboardMemory({
-      content: buildOrgText(name, description, tags),
-      metadata: {
-        type: "organization",
-        id: existingOrg.id,
-        name,
-        description,
-        tags,
-        owner_id: userData.user.id,
-      },
-    });
-    await uploadBackboardAssistantDocument({
-      filename: `org-${existingOrg.id}.txt`,
-      content: [
-        `Organization: ${name}`,
-        `Description: ${description || "N/A"}`,
-        `Tags: ${tags.length ? tags.join(", ") : "N/A"}`,
-      ].join("\n"),
-    });
 
     return NextResponse.json({ ok: true, id: existingOrg.id });
   }
@@ -187,39 +148,6 @@ export async function POST(request: Request) {
   if (insertError) {
     return NextResponse.json({ error: insertError.message }, { status: 400 });
   }
-
-  await upsertBackboardDocument({
-    id: org.id,
-    type: "organization",
-    text: buildOrgText(name, description, tags),
-    metadata: {
-      name,
-      description,
-      tags,
-      owner_id: userData.user.id,
-      slug,
-    },
-  });
-  await addBackboardMemory({
-    content: buildOrgText(name, description, tags),
-    metadata: {
-      type: "organization",
-      id: org.id,
-      name,
-      description,
-      tags,
-      owner_id: userData.user.id,
-      slug,
-    },
-  });
-  await uploadBackboardAssistantDocument({
-    filename: `org-${org.id}.txt`,
-    content: [
-      `Organization: ${name}`,
-      `Description: ${description || "N/A"}`,
-      `Tags: ${tags.length ? tags.join(", ") : "N/A"}`,
-    ].join("\n"),
-  });
 
   return NextResponse.json({ ok: true, id: org.id });
 }
