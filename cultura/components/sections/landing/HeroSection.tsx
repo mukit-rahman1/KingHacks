@@ -54,7 +54,7 @@ export function HeroSection() {
             </Link>
 
             <Link
-              href="/signin"
+              href="/login"
               className="
                 inline-flex h-12 items-center justify-center rounded-xl
                 border border-border bg-card px-6 text-sm font-semibold text-foreground
