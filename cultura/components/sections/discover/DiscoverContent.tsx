@@ -22,6 +22,7 @@ type UiEvent = EventItem & {
   location: string
   priceLabel: string
   featured: boolean
+  areaTag: string 
 }
 
 const toHumanDate = (value: string) => {
@@ -46,6 +47,19 @@ const categoryFromEvent = (event: EventItem, activeCat: string) => {
       lowerTags.some((t) => t.includes(c.label.toLowerCase()) || t.includes(c.id.toLowerCase()))
     )?.label ?? "Community"
   )
+}
+
+// ✅ NEW: infer an "area" label from tags (fallback if none found)
+const areaFromEvent = (event: EventItem) => {
+  const tags = (event.tags ?? []).map((t) => t.trim())
+
+  // try exact-ish matches first
+  const areaTag =
+    tags.find((t) => /^([A-Z]{2})$/.test(t)) || // ON, BC, QC...
+    tags.find((t) => /, ?[A-Z]{2}$/.test(t)) || // Kingston, ON
+    tags.find((t) => /(Ontario|Quebec|Alberta|British Columbia|Manitoba|Saskatchewan|Nova Scotia|New Brunswick|PEI|Prince Edward Island|Newfoundland|Labrador|Yukon|Nunavut|Northwest Territories)/i.test(t))
+
+  return areaTag ?? "Kingston"
 }
 
 const chipActiveClass =
@@ -87,6 +101,9 @@ export default function DiscoverPage() {
         // dummy, but gives you the mock UI
         priceLabel: idx % 3 === 0 ? "$45" : idx % 3 === 1 ? "Free" : "$25",
         featured: idx % 2 === 0,
+
+        // ✅ NEW: computed area label from tags
+        areaTag: areaFromEvent(event),
       }))
 
       setEvents(mapped)
@@ -245,8 +262,6 @@ export default function DiscoverPage() {
                       className="h-full w-full object-cover"
                       loading="lazy"
                     />
-
-                    {/* ✅ gradient overlay: transparent -> black */}
                     <div
                       className="
                         pointer-events-none absolute inset-0
@@ -273,21 +288,20 @@ export default function DiscoverPage() {
                   </span>
                 </div>
 
-                {/* Featured badge (top-right) */}
-                {e.featured && (
-                  <div className="absolute right-4 top-4">
-                    <span
-                      className="
-                        rounded-full bg-[color:var(--accent)]
-                        px-3 py-1 text-xs font-semibold
-                        text-[color:var(--accent-foreground)]
-                        shadow-sm
-                      "
-                    >
-                      Featured
-                    </span>
-                  </div>
-                )}
+                {/* ✅ NEW: Area badge (top-right, replaces/alongside Featured) */}
+                <div className="absolute right-4 top-4">
+                  <span
+                    className="
+                      rounded-full bg-black/70
+                      px-3 py-1 text-xs font-semibold
+                      text-white
+                      shadow-sm
+                      backdrop-blur
+                    "
+                  >
+                    {e.areaTag}
+                  </span>
+                </div>
 
                 {/* Price pill (bottom-right) */}
                 <div className="absolute bottom-4 right-4">
